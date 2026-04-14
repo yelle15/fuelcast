@@ -1,0 +1,17 @@
+services:
+  fuelcast-frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules # This protects the container's modules
+    environment:
+      - NODE_ENV=development
+
+  fuelcast-backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
