@@ -1,16 +1,22 @@
-FROM node:18-alpine
+# Use "slim" instead of "alpine" for better compatibility with native modules
+FROM node:20-slim
+
+# Install essential build tools
+RUN apt-get update && apt-get install -y \
+    python3 \
+    make \
+    g++ \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# Copy package files to install dependencies in the container
 COPY package*.json ./
+
+# Force install for the container environment
 RUN npm install
 
-# Copy the rest of the frontend files
 COPY . .
 
-# Expose the port Next.js runs on
 EXPOSE 3000
 
-# Start the development server
 CMD ["npm", "run", "dev"]
