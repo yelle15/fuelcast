@@ -1,21 +1,26 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
+from simulation_engine import run_fuel_simulation
 
 app = FastAPI(title="FuelCast API")
 
-# Enable CORS so Next.js can communicate with FastAPI
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], 
+    allow_origins=["*"], # restrict this in production
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-@app.get("/")
-def read_root():
-    return {"message": "Welcome to the FuelCast API", "status": "Active"}
+@app.get("/api/simulate")
+async def simulate(
+    country: str = Query(..., example="Philippines"),
+    fuel: str = Query(..., example="petrol"),
+    brent: float = Query(..., example=85.0)
+):
+    """Endpoint for the Fuel Price Simulation card."""
+    result = run_fuel_simulation(country, fuel, brent)
+    return result
 
-@app.get("/predict")
-def predict_sample():
-    # This is a placeholder for when the ML dev finishes the model
-    return {"prediction": "Coming soon!", "location": "Southeast Asia"}
+@app.get("/api/health")
+def health():
+    return {"status": "online", "engine": "heuristic-simulation-v1"}
