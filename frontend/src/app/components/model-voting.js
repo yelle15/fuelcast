@@ -51,7 +51,7 @@ const PredictionBadge = ({ type }) => {
   const config = badgeConfig[type] || badgeConfig.STABLE;
 
   return (
-    <div className={`${config.bgColor} rounded-[5px] px-2 py-1 inline-flex`}>
+      <div className={`${config.bgColor} rounded-[5px] px-2 py-1 inline-flex`}>
       <div className={`${config.textColor} text-[8px] font-bold text-center`}>
         {config.label}
       </div>
@@ -70,24 +70,24 @@ export default function ModelVoting({ predictions, majorityVote }) {
   );
 
   return (
-    <div className="w-full max-w-[369px] h-[268px] p-4 bg-white rounded-lg shadow-[0px_0px_6px_0px_rgba(0,0,0,0.20)] font-inter">
+    <div className="w-full max-w-[370px] h-[275px] p-4 bg-white rounded-lg shadow-[0px_0px_6px_0px_rgba(0,0,0,0.20)] font-inter">
       {/* Header */}
       <div className="flex justify-start items-center gap-2 mb-4">
         <img
           src="/Model%20Voting.png"
           alt="Model Voting Logo"
-          className="w-7 h-6 object-contain"
+          className="w-9 h-9 object-contain rounded-lg"
         />
-        <h3 className="text-black text-base font-semibold">Model Voting</h3>
+        <h3 className="text-black text-ms font-semibold">Model Voting</h3>
       </div>
 
       {/* Table Header */}
       <div className="w-full h-9 bg-slate-100 rounded-t-[5px] border border-gray-400/20 flex items-center px-4">
-        <span className="text-black text-[8px] font-semibold w-24">Model</span>
-        <span className="text-black text-[8px] font-semibold flex-1 text-center">
+        <span className="text-black text-[9px] font-semibold w-24">Model</span>
+        <span className="text-black text-[9px] font-semibold flex-1 text-center">
           Prediction
         </span>
-        <span className="text-black text-[8px] font-semibold w-16 text-center">
+        <span className="text-black text-[9px] font-semibold w-16 text-center">
           Confidence
         </span>
       </div>
@@ -102,7 +102,7 @@ export default function ModelVoting({ predictions, majorityVote }) {
               : ""
           }`}
         >
-          <span className="text-black text-[8px] font-medium w-24 truncate">
+          <span className="text-black text-[9px] font-medium w-24 truncate">
             {row.model}
           </span>
 
@@ -110,7 +110,7 @@ export default function ModelVoting({ predictions, majorityVote }) {
             <PredictionBadge type={row.prediction} />
           </div>
 
-          <span className="text-black text-[8px] font-medium w-16 text-center">
+          <span className="text-black text-[9px] font-medium w-16 text-center">
             {row.confidence}%
           </span>
         </div>
@@ -118,7 +118,7 @@ export default function ModelVoting({ predictions, majorityVote }) {
 
       {/* Majority Vote */}
       <div className="w-full mt-3 px-6 py-2 bg-slate-100 rounded-[5px] border border-gray-400/20 flex justify-center">
-        <div className="text-center text-[8px]">
+        <div className="text-center text-[12px]">
           <span className="text-black font-bold">MAJORITY VOTE: </span>
           <span className="text-red-500 font-bold">
             {safeMajorityVote.prediction}

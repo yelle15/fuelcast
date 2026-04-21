@@ -41,24 +41,24 @@ export default function PredictionConfidenceDistribution({
   rangeDisplay = "0.28 - 0.35 / Liter",
 }) {
   return (
-    <div className="w-full max-w-[333px] h-[268px] p-4 bg-white rounded-lg shadow-[0px_0px_6px_0px_rgba(0,0,0,0.20)] font-inter">
+    <div className="w-full max-w-[360px] h-[275px] p-4 bg-white rounded-lg shadow-[0px_0px_6px_0px_rgba(0,0,0,0.20)] font-inter">
       {/* Header */}
       <div className="flex justify-start items-center gap-2 mb-3 ">
         <img
           src="/Prediction%20Confidence%20Distribution.png"
           alt="Prediction Confidence Distribution Logo"
-          className="w-7 h-6 object-contain"
+          className="w-9 h-9 object-contain rounded-lg"
         />
-        <h3 className="text-black text-base font-semibold">
+        <h3 className="text-black text-ms font-semibold">
           Prediction Confidence Distribution
         </h3>
       </div>
 
       {/* Labels */}
       <div className="flex justify-start items-center gap-24 mb-3">
-        <span className="text-black text-[10px] font-bold flex items-center gap-2">
+        <span className="text-black text-[12px] font-bold flex items-center gap-2">
           Range:
-          <span className="text-teal-600 text-[8px] font-medium font-mono ml-1">
+          <span className="text-teal-600 text-[12px] font-medium font-mono ml-1">
             {rangeDisplay}
           </span>
         </span>
