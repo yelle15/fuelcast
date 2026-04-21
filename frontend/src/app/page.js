@@ -1,6 +1,7 @@
-import BrentCrudevsLocalTrend from "@/app/components/brent-crude-vs-local-trend";
+import BrentCrudevsLocalTrend from "@/app/components/prediction-confidence-distribution";
 import FuelPriceSimulation from "@/app/components/fuel-price-simulation";
 import PredictionResults from "@/app/components/prediction-results";
+import PredictionConfidenceDistribution from "@/app/components/prediction-confidence-distribution";
 
 export default function Home() {
   return (
@@ -9,6 +10,7 @@ export default function Home() {
         <FuelPriceSimulation />
         <PredictionResults />
         <BrentCrudevsLocalTrend />
+        <PredictionConfidenceDistribution />
       </main>
     </div>
   );
