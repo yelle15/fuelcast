@@ -1,110 +1,111 @@
 "use client";
 
 import React from "react";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
 
-const mockConfidenceData = [
-  { confidence: "80%", frequency: 4 },
-  { confidence: "85%", frequency: 12 },
-  { confidence: "90%", frequency: 12 },
-  { confidence: "92%", frequency: 20 },
-  { confidence: "95%", frequency: 16 },
-  { confidence: "100%", frequency: 7 },
+const mockModelPredictions = [
+  { id: 1, model: "Linear Regression", prediction: "HIKE", confidence: 98 },
+  { id: 2, model: "XGBoost", prediction: "ROLLBACK", confidence: 94 },
+  { id: 3, model: "SVM", prediction: "STABLE", confidence: 89 },
 ];
 
-const CustomTooltip = ({ active, payload }) => {
-  if (active && payload && payload.length) {
-    return (
-      <div className="bg-white p-2 border border-gray-300 rounded-lg shadow-lg font-inter">
-        <p className="text-xs font-semibold text-black">
-          Confidence Level: {payload[0]?.payload?.confidence}
-        </p>
-        <p className="text-xs text-blue-500 font-semibold">
-          Frequency: {payload[0]?.value}
-        </p>
-      </div>
-    );
-  }
-  return null;
+const mockMajorityVote = {
+  prediction: "HIKE",
+  confidence: 98,
 };
 
-export default function PredictionConfidenceDistribution({
-  data = mockConfidenceData,
-  rangeDisplay = "0.28 - 0.35 / Liter",
+const PredictionBadge = ({ type }) => {
+  const badgeConfig = {
+    HIKE: {
+      bgColor: "bg-rose-200",
+      textColor: "text-red-500",
+      label: "HIKE",
+    },
+    STABLE: {
+      bgColor: "bg-yellow-100",
+      textColor: "text-orange-500",
+      label: "STABLE",
+    },
+    ROLLBACK: {
+      bgColor: "bg-teal-100",
+      textColor: "text-emerald-700",
+      label: "ROLLBACK",
+    },
+  };
+
+  const config = badgeConfig[type] || badgeConfig.STABLE;
+
+  return (
+    <div className={`${config.bgColor} rounded-[5px] px-2 py-1 inline-flex`}>
+      <div className={`${config.textColor} text-[8px] font-bold text-center`}>
+        {config.label}
+      </div>
+    </div>
+  );
+};
+
+export default function ModelVoting({
+  predictions = mockModelPredictions,
+  majorityVote = mockMajorityVote,
 }) {
   return (
     <div className="w-full max-w-[333px] h-[268px] p-4 bg-white rounded-lg shadow-[0px_0px_6px_0px_rgba(0,0,0,0.20)] font-inter">
-      {/* Header */}
-      <div className="flex justify-start items-center gap-2 mb-3 ">
+      {/* Header (aligned with other component style) */}
+      <div className="flex justify-start items-center gap-2 mb-3">
         <img
-          src="/Prediction%20Confidence%20Distribution.png"
-          alt="Prediction Confidence Distribution Logo"
+          src="/Model%20Voting.png"
+          alt="Model Voting Logo"
           className="w-7 h-6 object-contain"
         />
-        <h3 className="text-black text-base font-semibold">
-          Prediction Confidence Distribution
-        </h3>
+        <h3 className="text-black text-base font-semibold">Model Voting</h3>
       </div>
 
-      {/* Labels */}
-      <div className="flex justify-start items-center gap-24 mb-3">
-        <span className="text-black text-[10px] font-bold flex items-center gap-2">
-          Range:
-          <span className="text-teal-600 text-[8px] font-medium font-mono ml-1">
-            {rangeDisplay}
+      {/* Table Container */}
+      <div className="w-full">
+        {/* Table Header */}
+        <div className="w-full h-9 bg-slate-100 rounded-t-[5px] border border-gray-500/40 flex items-center px-4">
+          <span className="text-black text-[8px] font-semibold w-24">
+            Model
           </span>
-        </span>
+          <span className="text-black text-[8px] font-semibold flex-1 text-center">
+            Prediction
+          </span>
+          <span className="text-black text-[8px] font-semibold w-16 text-center">
+            Confidence
+          </span>
+        </div>
+
+        {/* Rows */}
+        {predictions.map((row, index) => (
+          <div
+            key={row.id}
+            className={`w-full h-9 bg-white border-x border-t border-gray-500/40 flex items-center px-4 ${
+              index === predictions.length - 1 ? "rounded-b-[5px] border-b" : ""
+            }`}
+          >
+            <span className="text-black text-[8px] font-medium w-24 truncate">
+              {row.model}
+            </span>
+
+            <div className="flex-1 flex justify-center">
+              <PredictionBadge type={row.prediction} />
+            </div>
+
+            <span className="text-black text-[8px] font-medium w-16 text-center">
+              {row.confidence}%
+            </span>
+          </div>
+        ))}
       </div>
 
-      {/* Chart */}
-      {/* <div className="w-full h-[200px]"> */}
-      <ResponsiveContainer width="100%" height="88%">
-        <BarChart
-          data={data}
-          margin={{ top: 10, right: 15, left: 0, bottom: 20 }}
-        >
-          {/* Grid (clean solid lines) */}
-          <CartesianGrid
-            stroke="rgba(107, 114, 128, 0.2)"
-            horizontal={true}
-            vertical={false}
-            strokeWidth={0.5}
-          />
-
-          {/* X-axis */}
-          <XAxis
-            dataKey="confidence"
-            tick={{ fontSize: 8, fill: "#000" }}
-            tickLine={false}
-            axisLine={{ stroke: "rgba(107, 114, 128, 0.2)" }}
-          />
-
-          {/* Y-axis (even spacing) */}
-          <YAxis
-            tick={{ fontSize: 8, fill: "#000" }}
-            tickLine={false}
-            axisLine={{ stroke: "rgba(107, 114, 128, 0.2)" }}
-            width={25}
-            domain={[0, 25]}
-            ticks={[0, 5, 10, 15, 20, 25]}
-          />
-
-          {/* Tooltip (NO cursor highlight anymore) */}
-          <Tooltip content={<CustomTooltip />} cursor={false} />
-
-          {/* Bars */}
-          <Bar dataKey="frequency" fill="#3B82F6" radius={[2, 2, 0, 0]} />
-        </BarChart>
-      </ResponsiveContainer>
+      {/* Majority Vote (aligned spacing style) */}
+      <div className="w-full mt-3 px-6 py-2 bg-slate-100 rounded-[5px] border border-gray-500/40 flex justify-center">
+        <div className="text-center text-[8px]">
+          <span className="text-black font-bold">MAJORITY VOTE: </span>
+          <span className="text-red-500 font-bold">
+            {majorityVote.prediction}
+          </span>
+        </div>
+      </div>
     </div>
-    // </div>
   );
 }
