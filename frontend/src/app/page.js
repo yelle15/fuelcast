@@ -1,4 +1,5 @@
-import PredictionResults from "@/components/prediction-results";
+// import FuelPriceSimulation from "@/app/components/fuel-price-simulation";
+import PredictionResults from "@/app/components/prediction-results";
 
 export default function Home() {
   return (
