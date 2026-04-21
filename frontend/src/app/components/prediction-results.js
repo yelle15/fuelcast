@@ -102,7 +102,7 @@ export default function PredictionResults(props) {
     predictionStatusConfig.STABLE;
 
   return (
-    <div className="w-[726px] h-[405px] p-5 bg-white rounded-lg shadow-[0px_0px_6px_0px_rgba(0,0,0,0.20)] flex flex-col justify-start items-start gap-2.5">
+    <div className="w-[726px] h-123 p-4 bg-white rounded-lg shadow-[0px_0px_6px_0px_rgba(0,0,0,0.20)] flex flex-col justify-start items-start gap-2.5">
       {/* HEADER */}
       <div className="self-stretch flex justify-between items-start gap-4">
         <div className="flex items-start gap-3">
@@ -113,22 +113,21 @@ export default function PredictionResults(props) {
           />
 
           <div className="flex flex-col">
-            <h3
-              className={`text-black text-base font-semibold ${inter.className}`}
-            >
+            <h1
+              className="text-lg font-semibold text-gray-900 leading-tight"
+              >
               Prediction Results
-            </h3>
-            <div
-              className={`text-black text-[8px] font-light ${inter.className}`}
-            >
+            </h1>
+            <p
+              className="text-[10px] font-inter text-gray-600 mt-0.5">
               Fill in the inputs to generate a prediction.
-            </div>
+            </p>
           </div>
         </div>
 
         <div className="px-3 py-1 bg-sky-950 rounded-[3px] flex-shrink-0">
           <div
-            className={`text-white text-[8px] font-semibold ${inter.className}`}
+            className={`text-white text-xs font-semibold ${inter.className}`}
           >
             DATE: {predictionData.date}
           </div>
@@ -153,13 +152,13 @@ export default function PredictionResults(props) {
 
         <div className="flex flex-col gap-1 flex-1">
           <div
-            className={`text-2xl font-semibold ${inter.className}`}
+            className={`text-lg font-semibold ${inter.className}`}
             style={{ color: currentConfig.textColor }}
           >
             {predictionData.prediction.status}
           </div>
 
-          <div className={`text-[8px] ${inter.className}`}>
+          <div className={`text-[10px] ${inter.className}`}>
             <span className="text-black font-bold">Disclaimer: </span>
             <span className="text-black font-normal">
               {predictionData.prediction.disclaimer}
@@ -170,7 +169,7 @@ export default function PredictionResults(props) {
 
       {/* REGRESSION */}
       <div className="self-stretch flex flex-col gap-2.5">
-        <div className={`text-black text-xs font-bold ${inter.className}`}>
+        <div className="text-sm font-semibold font-inter text-gray-900">
           Regression Output
         </div>
 
@@ -182,7 +181,7 @@ export default function PredictionResults(props) {
               Prediction Change
             </div>
             <div
-              className={`text-teal-600 text-base font-medium ${jetbrainsMono.className}`}
+              className={`text-teal-600 text-sm font-medium ${jetbrainsMono.className}`}
             >
               {predictionData.regression.predictionChange}
             </div>
@@ -195,7 +194,7 @@ export default function PredictionResults(props) {
               R² Score
             </div>
             <div
-              className={`text-black text-base font-medium ${jetbrainsMono.className}`}
+              className={`text-black text-sm font-medium ${jetbrainsMono.className}`}
             >
               {predictionData.regression.r2Score}
             </div>
@@ -208,7 +207,7 @@ export default function PredictionResults(props) {
               Confidence Level
             </div>
             <div
-              className={`text-teal-600 text-base font-medium ${jetbrainsMono.className}`}
+              className={`text-teal-600 text-sm font-medium ${jetbrainsMono.className}`}
             >
               {predictionData.regression.confidenceLevel}
             </div>
