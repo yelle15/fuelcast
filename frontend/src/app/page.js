@@ -1,4 +1,4 @@
-import PredictionConfidenceDistribution from "@/components/brent-crude-vs-local-trend";
+import PredictionConfidenceDistribution from "@/components/prediction-confidence-distribution";
 
 export default function Home() {
   return (
