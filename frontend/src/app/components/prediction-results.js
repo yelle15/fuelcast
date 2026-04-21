@@ -102,14 +102,14 @@ export default function PredictionResults(props) {
     predictionStatusConfig.STABLE;
 
   return (
-    <div className="w-[726px] h-123 p-4 bg-white rounded-lg shadow-[0px_0px_6px_0px_rgba(0,0,0,0.20)] flex flex-col justify-start items-start gap-2.5">
+    <div className="w-[750px] h-123 p-4 bg-white rounded-lg shadow-[0px_0px_6px_0px_rgba(0,0,0,0.20)] flex flex-col justify-start items-start gap-2.5">
       {/* HEADER */}
       <div className="self-stretch flex justify-between items-start gap-4">
         <div className="flex items-start gap-3">
           <img
             src="/Prediction%20Results.png"
             alt="Prediction Results Logo"
-            className="w-9 h-9 object-contain flex-shrink-0"
+            className="w-9 h-9 object-contain rounded-lg flex-shrink-0"
           />
 
           <div className="flex flex-col">

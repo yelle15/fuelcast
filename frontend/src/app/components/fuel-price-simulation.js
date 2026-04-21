@@ -26,7 +26,7 @@ export default function FuelPriceSimulation() {
   };
 
   return (
-    <div className="w-full max-w-lg h-123 mx-auto bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
+    <div className="w-full max-w-lg h-123 bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
       {/* Header */}
       <div className="flex items-start gap-3 mb-4">
         <div className="w-10 h-10 bg-sky-800 rounded-lg flex items-center justify-center shrink-0">

@@ -10,10 +10,10 @@ export default function Footer() {
                     </p>
                 </div>
 
-                <div className="space-y-3 md:text-right">
+                <div className="py-1 space-y-2 md:text-right">
                     <p className="text-xs font-semibold text-white">A 4-328 CS 3246 - CS Elective 1 (Machine Learning) Final Project</p>
                     <p className="text-xs font-medium text-white">by Benjamin Asjali, Arielle Aventura, Dreame Baculio, and Sam Tesoro</p>
-                    <p className="text-[10px] font-medium text-slate-200">2024 FuelCast SEA. All rights reserved.</p>
+                    <p className="text-[10px] font-medium text-slate-200">2026 FuelCast SEA. All rights reserved.</p>
                 </div>
             </div>
         </footer>

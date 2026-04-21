@@ -55,7 +55,7 @@ const CustomTooltip = ({ active, payload }) => {
 /** Custom Legend */
 const CustomLegend = () => {
   return (
-    <div className="flex justify-between items-center mb-3 font-inter">
+    <div className="flex justify-between items-center mb-2 font-inter">
       <span className="text-[10px] font-semibold text-blue-500 font-inter mt-2">
         USD
       </span>
@@ -92,15 +92,15 @@ export default function BrentCrudeVsLocalTrend({
   const pesoGridLines = [60, 62, 64, 66, 68, 70];
 
   return (
-    <div className="w-full max-w-[499px] h-[268px] p-4 bg-white rounded-lg shadow-[0px_0px_6px_0px_rgba(0,0,0,0.20)]">
+    <div className="w-full max-w-lg h-[275px] p-4 bg-white rounded-lg border border-gray-200 shadow-sm flex flex-col">
       {/* Header */}
-      <div className="flex justify-start items-center gap-2 mb-2">
+      <div className="flex justify-start items-center gap-3 mb-4">
         <img
           src="/Brent%20Crude%20vs.%20Local%20Trend.png"
           alt="Brent Crude vs. Local Trend Logo"
-          className="w-7 h-6 object-contain"
+          className="w-9 h-9 object-contain rounded-lg"
         />
-        <h3 className="text-black text-base font-semibold font-inter">
+        <h3 className="text-black text-ms font-semibold font-inter">
           Brent Crude vs. Local Trend
         </h3>
       </div>
@@ -109,11 +109,12 @@ export default function BrentCrudeVsLocalTrend({
       <CustomLegend />
 
       {/* Chart */}
-      <ResponsiveContainer width="100%" height="80%">
-        <ComposedChart
-          data={chartData}
-          margin={{ top: 15, right: 0, left: 0, bottom: 10 }}
-        >
+      <div className="flex-1 min-h-0">
+        <ResponsiveContainer width="100%" height="100%">
+          <ComposedChart
+            data={chartData}
+            margin={{ top: 8, right: 0, left: 0, bottom: 4 }}
+          >
           <CartesianGrid
             stroke="rgba(107,114,128,0.2)"
             vertical={false}
@@ -130,17 +131,17 @@ export default function BrentCrudeVsLocalTrend({
             />
           ))}
 
-          <XAxis
-            dataKey="date"
-            tick={{ fontSize: 8, fontFamily: "Inter", fill: "#000" }}
-            axisLine={{
-              stroke: "rgba(107, 114, 128, 0.1)",
-              strokeWidth: 0.5,
-            }}
-            tickLine={false}
-            height={25}
-            padding={{ left: 10, right: 10, top: 100 }}
-          />
+            <XAxis
+              dataKey="date"
+              tick={{ fontSize: 8, fontFamily: "Inter", fill: "#000" }}
+              axisLine={{
+                stroke: "rgba(107, 114, 128, 0.1)",
+                strokeWidth: 0.5,
+              }}
+              tickLine={false}
+              height={20}
+              padding={{ left: 10, right: 10 }}
+            />
 
           <YAxis
             yAxisId="left"
@@ -191,12 +192,13 @@ export default function BrentCrudeVsLocalTrend({
             isAnimationActive
           />
 
-          <Tooltip
-            content={<CustomTooltip />}
-            cursor={{ strokeDasharray: "3 3" }}
-          />
-        </ComposedChart>
-      </ResponsiveContainer>
+            <Tooltip
+              content={<CustomTooltip />}
+              cursor={{ strokeDasharray: "3 3" }}
+            />
+          </ComposedChart>
+        </ResponsiveContainer>
+      </div>
     </div>
   );
 }
