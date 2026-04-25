@@ -7,10 +7,13 @@ WORKDIR /app
 
 # Install Python dependencies
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --retries 10 --timeout 180 -r requirements.txt
 
 # Copy the rest of the code
 COPY . .
+
+# Generate mock model bundle for testing
+RUN python generate_model.py
 
 # Start the FastAPI server
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

@@ -1,7 +1,7 @@
 fastapi==0.110.0
 uvicorn==0.27.1
 pandas==2.2.1
-scikit-learn
-xgboost
+scikit-learn==1.4.2
+xgboost==1.7.6
 joblib
 python-multipart

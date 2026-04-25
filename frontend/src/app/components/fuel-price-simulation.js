@@ -2,28 +2,40 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
+import DatePickerModal from './date-picker-modal';
 
-export default function FuelPriceSimulation() {
-  const [country, setCountry] = useState('Philippines');
-  const [fuelType, setFuelType] = useState('Diesel');
-  const [currentPrice, setCurrentPrice] = useState('62.50');
-  const [lastWeekPrice, setLastWeekPrice] = useState('61.90');
-  const [taxPercentage, setTaxPercentage] = useState('12.00');
-  const [brentCrudePrice, setBrentCrudePrice] = useState(62.50);
-  const [predictionDate, setPredictionDate] = useState('2025-10-20');
+function Spinner() {
+  return (
+    <div
+      className="h-4 w-4 animate-spin rounded-full border-2 border-white/50 border-t-white"
+      aria-label="Loading"
+      role="status"
+    />
+  );
+}
 
-  const handleRunPrediction = () => {
-    // TODO: Implement prediction logic
-    console.log({
-      country,
-      fuelType,
-      currentPrice,
-      lastWeekPrice,
-      taxPercentage,
-      brentCrudePrice,
-      predictionDate,
-    });
-  };
+export default function FuelPriceSimulation({
+  country,
+  setCountry,
+  fuelType,
+  setFuelType,
+  currentPrice,
+  setCurrentPrice,
+  lastWeekPrice,
+  setLastWeekPrice,
+  taxPercentage,
+  setTaxPercentage,
+  brentCrudePrice,
+  setBrentCrudePrice,
+  predictionDate,
+  setPredictionDate,
+  minPredictionDate,
+  maxPredictionDate,
+  onRunPrediction,
+  loading = false,
+  disabled = false,
+}) {
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   return (
     <div className="w-full max-w-lg h-123 bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
@@ -96,8 +108,10 @@ export default function FuelPriceSimulation() {
               type="number"
               value={currentPrice}
               onChange={(e) => setCurrentPrice(e.target.value)}
-              placeholder="0.00"
+              placeholder="0.95"
               step="0.01"
+              min="0.1"
+              max="5"
               className="w-full px-3 py-1.5 border border-gray-300 rounded-md text-gray-900 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
@@ -111,8 +125,10 @@ export default function FuelPriceSimulation() {
               type="number"
               value={lastWeekPrice}
               onChange={(e) => setLastWeekPrice(e.target.value)}
-              placeholder="0.00"
+              placeholder="0.93"
               step="0.01"
+              min="0.1"
+              max="5"
               className="w-full px-3 py-1.5 border border-gray-300 rounded-md text-gray-900 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
@@ -128,6 +144,8 @@ export default function FuelPriceSimulation() {
               onChange={(e) => setTaxPercentage(e.target.value)}
               placeholder="0.00"
               step="0.01"
+              min="0"
+              max="40"
               className="w-full px-3 py-1.5 border border-gray-300 rounded-md text-gray-900 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
@@ -138,7 +156,7 @@ export default function FuelPriceSimulation() {
       <div className="mb-4">
         <div className="flex justify-between items-center mb-2">
           <label className="text-sm font-semibold font-inter text-gray-900">
-            Brent Crude Price (Currency)
+            Brent Crude Price (USD/bbl)
             <span className="text-gray-500 text-xs font-normal italic ml-1">optional</span>
           </label>
           <div className="flex items-center gap-2">
@@ -149,7 +167,7 @@ export default function FuelPriceSimulation() {
               onChange={(e) => setBrentCrudePrice(parseFloat(e.target.value) || 0)}
               placeholder="0.00"
               step="0.1"
-              min="0"
+              min="20"
               max="150"
               className="w-20 px-2 py-1 border border-gray-300 rounded-md text-gray-900 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-right"
             />
@@ -157,7 +175,7 @@ export default function FuelPriceSimulation() {
         </div>
         <input
           type="range"
-          min="0"
+          min="20"
           max="150"
           step="0.1"
           value={brentCrudePrice}
@@ -165,7 +183,7 @@ export default function FuelPriceSimulation() {
           className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-900"
         />
         <div className="flex justify-between text-xs text-gray-500 mt-1">
-          <span>$0.00</span>
+          <span>$20.00</span>
           <span>$150.00</span>
         </div>
       </div>
@@ -175,23 +193,51 @@ export default function FuelPriceSimulation() {
         <label className="block text-sm font-semibold font-inter text-gray-700 mb-2">
           Date for Prediction <span className="text-red-500">*</span>
         </label>
-        <div className="relative">
-          <input
-            type="date"
-            value={predictionDate}
-            onChange={(e) => setPredictionDate(e.target.value)}
-            className="w-full px-3 py-1.5 border border-gray-300 rounded-md text-gray-900 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          />
-        </div>
+        <button
+          type="button"
+          onClick={() => setIsModalOpen(true)}
+          className="w-full px-3 py-1.5 border border-gray-300 rounded-md text-gray-900 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-left bg-white hover:bg-gray-50 transition-colors"
+        >
+          {predictionDate || 'Select a date...'}
+        </button>
       </div>
+
+      {/* Date Picker Modal */}
+      <DatePickerModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        selectedDate={predictionDate}
+        onSelectDate={(date) => {
+          const isoDate = date.toISOString().split('T')[0];
+          setPredictionDate(isoDate);
+          setIsModalOpen(false);
+        }}
+        minDate={minPredictionDate}
+        maxDate={maxPredictionDate}
+      />
 
       {/* Run Prediction Button */}
       <button
-        onClick={handleRunPrediction}
-        className="w-full bg-blue-900 hover:bg-blue-800 text-white font-semibold py-2 px-4 rounded-md transition-colors flex items-center justify-center gap-2"
+        type="button"
+        onClick={onRunPrediction}
+        disabled={loading || disabled}
+        className={`w-full bg-blue-900 text-white font-semibold py-2 px-4 rounded-md transition-colors flex items-center justify-center gap-2 ${
+          loading || disabled
+            ? "cursor-not-allowed opacity-70"
+            : "hover:bg-blue-800"
+        }`}
       >
-        <span>▶</span>
-        RUN PREDICTION
+        {loading ? (
+          <>
+            <Spinner />
+            Running...
+          </>
+        ) : (
+          <>
+            <span>▶</span>
+            RUN PREDICTION
+          </>
+        )}
       </button>
     </div>
   );

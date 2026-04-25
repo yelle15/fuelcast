@@ -1,5 +1,6 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any
+import traceback
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
@@ -63,6 +64,13 @@ FUEL_ID_LOOKUP = {
 
 def _load_assets() -> tuple[Any, dict[str, Any], dict[str, Any]]:
     bundle_path = os.path.join(os.path.dirname(__file__), "models", "fuel_dashboard_assets.joblib")
+
+    if not os.path.exists(bundle_path):
+        raise RuntimeError(
+            f"Model bundle not found at {bundle_path}. "
+            "Run backend/train_actual_model.py to generate it from real data."
+        )
+
     try:
         assets = joblib.load(bundle_path)
     except Exception as exc:
@@ -128,6 +136,17 @@ async def predict(data: PricePredictionInput):
             detail="prediction_date must be a valid ISO date string (YYYY-MM-DD)",
         ) from exc
 
+    # Enforce prediction date is within valid range: today to +30 days
+    today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    max_prediction_date = today + timedelta(days=30)
+    parsed_date_normalized = parsed_date.replace(hour=0, minute=0, second=0, microsecond=0)
+    
+    if parsed_date_normalized < today or parsed_date_normalized > max_prediction_date:
+        raise HTTPException(
+            status_code=400,
+            detail=f"prediction_date must be between {today.strftime('%Y-%m-%d')} and {max_prediction_date.strftime('%Y-%m-%d')}",
+        )
+
     mapped = COUNTRY_LOOKUP[country_key]
 
     # Build the same engineered feature columns used in training.
@@ -150,6 +169,9 @@ async def predict(data: PricePredictionInput):
     try:
         final_prediction = _predict_model_price(final_model, feature_df)
     except Exception as exc:
+        print("--- BACKEND CRASH ---")
+        print(traceback.format_exc()) 
+        print("---------------------")
         raise HTTPException(status_code=500, detail=f"Final model prediction failed: {exc}") from exc
 
     prediction_change = final_prediction - data.current_price
