@@ -12,12 +12,12 @@ export default function Home() {
   // Input states (lifted from FuelPriceSimulation)
   const [country, setCountry] = useState("Philippines");
   const [fuelType, setFuelType] = useState("Diesel");
-  const [currentPrice, setCurrentPrice] = useState("62.50");
-  const [lastWeekPrice, setLastWeekPrice] = useState("61.90");
+  const [currentPrice, setCurrentPrice] = useState("0.95");
+  const [lastWeekPrice, setLastWeekPrice] = useState("0.93");
   const [taxPercentage, setTaxPercentage] = useState("12.00");
 
   // Required: Brent Crude slider state in page.js
-  const [brentCrudePrice, setBrentCrudePrice] = useState(62.5);
+  const [brentCrudePrice, setBrentCrudePrice] = useState(85);
 
   const [predictionDate, setPredictionDate] = useState("2025-10-20");
 
@@ -26,6 +26,26 @@ export default function Home() {
 
   // UI state
   const [loading, setLoading] = useState(false);
+
+  const parsedCurrentPrice = Number(currentPrice);
+  const parsedLastWeekPrice = Number(lastWeekPrice);
+  const parsedTaxPercentage = Number(taxPercentage);
+  const hasTaxValue = taxPercentage !== "" && taxPercentage != null;
+
+  // Training data is in USD/L, so keep inputs in a realistic numeric range.
+  const priceInputsAreValid =
+    Number.isFinite(parsedCurrentPrice) &&
+    Number.isFinite(parsedLastWeekPrice) &&
+    parsedCurrentPrice >= 0.1 &&
+    parsedCurrentPrice <= 5 &&
+    parsedLastWeekPrice >= 0.1 &&
+    parsedLastWeekPrice <= 5 &&
+    brentCrudePrice >= 20 &&
+    brentCrudePrice <= 150 &&
+    (!hasTaxValue ||
+      (Number.isFinite(parsedTaxPercentage) &&
+        parsedTaxPercentage >= 0 &&
+        parsedTaxPercentage <= 40));
 
   const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL;
   const normalizedApiBaseUrl = apiBaseUrl?.replace(/\/$/, "");
@@ -40,7 +60,7 @@ export default function Home() {
 
   // Required: gather all states and POST to `${NEXT_PUBLIC_API_URL}/predict`
   const handleRunPrediction = async () => {
-    if (!normalizedApiBaseUrl || loading) return;
+    if (!normalizedApiBaseUrl || loading || !priceInputsAreValid) return;
 
     setLoading(true);
     try {
@@ -127,7 +147,7 @@ export default function Home() {
               setPredictionDate={setPredictionDate}
               onRunPrediction={handleRunPrediction}
               loading={loading}
-              disabled={!normalizedApiBaseUrl}
+              disabled={!normalizedApiBaseUrl || !priceInputsAreValid}
             />
           </div>
           <div className="h-full">

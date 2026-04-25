@@ -103,8 +103,10 @@ export default function FuelPriceSimulation({
               type="number"
               value={currentPrice}
               onChange={(e) => setCurrentPrice(e.target.value)}
-              placeholder="0.00"
+              placeholder="0.95"
               step="0.01"
+              min="0.1"
+              max="5"
               className="w-full px-3 py-1.5 border border-gray-300 rounded-md text-gray-900 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
@@ -118,8 +120,10 @@ export default function FuelPriceSimulation({
               type="number"
               value={lastWeekPrice}
               onChange={(e) => setLastWeekPrice(e.target.value)}
-              placeholder="0.00"
+              placeholder="0.93"
               step="0.01"
+              min="0.1"
+              max="5"
               className="w-full px-3 py-1.5 border border-gray-300 rounded-md text-gray-900 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
@@ -135,6 +139,8 @@ export default function FuelPriceSimulation({
               onChange={(e) => setTaxPercentage(e.target.value)}
               placeholder="0.00"
               step="0.01"
+              min="0"
+              max="40"
               className="w-full px-3 py-1.5 border border-gray-300 rounded-md text-gray-900 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
@@ -145,7 +151,7 @@ export default function FuelPriceSimulation({
       <div className="mb-4">
         <div className="flex justify-between items-center mb-2">
           <label className="text-sm font-semibold font-inter text-gray-900">
-            Brent Crude Price (Currency)
+            Brent Crude Price (USD/bbl)
             <span className="text-gray-500 text-xs font-normal italic ml-1">optional</span>
           </label>
           <div className="flex items-center gap-2">
@@ -156,7 +162,7 @@ export default function FuelPriceSimulation({
               onChange={(e) => setBrentCrudePrice(parseFloat(e.target.value) || 0)}
               placeholder="0.00"
               step="0.1"
-              min="0"
+              min="20"
               max="150"
               className="w-20 px-2 py-1 border border-gray-300 rounded-md text-gray-900 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-right"
             />
@@ -164,7 +170,7 @@ export default function FuelPriceSimulation({
         </div>
         <input
           type="range"
-          min="0"
+          min="20"
           max="150"
           step="0.1"
           value={brentCrudePrice}
@@ -172,7 +178,7 @@ export default function FuelPriceSimulation({
           className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-900"
         />
         <div className="flex justify-between text-xs text-gray-500 mt-1">
-          <span>$0.00</span>
+          <span>$20.00</span>
           <span>$150.00</span>
         </div>
       </div>
