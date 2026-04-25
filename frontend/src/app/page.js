@@ -46,15 +46,15 @@ export default function Home() {
     try {
       const payload = {
         country,
-        fuelType,
-        currentPrice: Number(currentPrice),
-        lastWeekPrice: Number(lastWeekPrice),
-        taxPercentage:
+        fuel_type: fuelType,
+        current_price: Number(currentPrice),
+        last_week_price: Number(lastWeekPrice),
+        tax_percentage:
           taxPercentage === "" || taxPercentage == null
             ? null
             : Number(taxPercentage),
-        brentCrudePrice,
-        predictionDate,
+        brent_crude: brentCrudePrice,
+        prediction_date: predictionDate,
       };
 
       const response = await fetch(`${normalizedApiBaseUrl}/predict`, {

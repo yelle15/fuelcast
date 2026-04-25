@@ -1,5 +1,6 @@
 from datetime import datetime
 from typing import Any
+import traceback
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
@@ -63,6 +64,13 @@ FUEL_ID_LOOKUP = {
 
 def _load_assets() -> tuple[Any, dict[str, Any], dict[str, Any]]:
     bundle_path = os.path.join(os.path.dirname(__file__), "models", "fuel_dashboard_assets.joblib")
+
+    if not os.path.exists(bundle_path):
+        raise RuntimeError(
+            f"Model bundle not found at {bundle_path}. "
+            "Run backend/train_actual_model.py to generate it from real data."
+        )
+
     try:
         assets = joblib.load(bundle_path)
     except Exception as exc:
@@ -150,6 +158,9 @@ async def predict(data: PricePredictionInput):
     try:
         final_prediction = _predict_model_price(final_model, feature_df)
     except Exception as exc:
+        print("--- BACKEND CRASH ---")
+        print(traceback.format_exc()) 
+        print("---------------------")
         raise HTTPException(status_code=500, detail=f"Final model prediction failed: {exc}") from exc
 
     prediction_change = final_prediction - data.current_price
