@@ -1,6 +1,8 @@
 'use client';
 
+import { useState } from 'react';
 import Image from 'next/image';
+import DatePickerModal from './date-picker-modal';
 
 function Spinner() {
   return (
@@ -27,10 +29,13 @@ export default function FuelPriceSimulation({
   setBrentCrudePrice,
   predictionDate,
   setPredictionDate,
+  minPredictionDate,
+  maxPredictionDate,
   onRunPrediction,
   loading = false,
   disabled = false,
 }) {
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   return (
     <div className="w-full max-w-lg h-123 bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
@@ -188,15 +193,28 @@ export default function FuelPriceSimulation({
         <label className="block text-sm font-semibold font-inter text-gray-700 mb-2">
           Date for Prediction <span className="text-red-500">*</span>
         </label>
-        <div className="relative">
-          <input
-            type="date"
-            value={predictionDate}
-            onChange={(e) => setPredictionDate(e.target.value)}
-            className="w-full px-3 py-1.5 border border-gray-300 rounded-md text-gray-900 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          />
-        </div>
+        <button
+          type="button"
+          onClick={() => setIsModalOpen(true)}
+          className="w-full px-3 py-1.5 border border-gray-300 rounded-md text-gray-900 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-left bg-white hover:bg-gray-50 transition-colors"
+        >
+          {predictionDate || 'Select a date...'}
+        </button>
       </div>
+
+      {/* Date Picker Modal */}
+      <DatePickerModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        selectedDate={predictionDate}
+        onSelectDate={(date) => {
+          const isoDate = date.toISOString().split('T')[0];
+          setPredictionDate(isoDate);
+          setIsModalOpen(false);
+        }}
+        minDate={minPredictionDate}
+        maxDate={maxPredictionDate}
+      />
 
       {/* Run Prediction Button */}
       <button

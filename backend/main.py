@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any
 import traceback
 
@@ -135,6 +135,17 @@ async def predict(data: PricePredictionInput):
             status_code=400,
             detail="prediction_date must be a valid ISO date string (YYYY-MM-DD)",
         ) from exc
+
+    # Enforce prediction date is within valid range: today to +30 days
+    today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    max_prediction_date = today + timedelta(days=30)
+    parsed_date_normalized = parsed_date.replace(hour=0, minute=0, second=0, microsecond=0)
+    
+    if parsed_date_normalized < today or parsed_date_normalized > max_prediction_date:
+        raise HTTPException(
+            status_code=400,
+            detail=f"prediction_date must be between {today.strftime('%Y-%m-%d')} and {max_prediction_date.strftime('%Y-%m-%d')}",
+        )
 
     mapped = COUNTRY_LOOKUP[country_key]
 

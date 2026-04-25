@@ -8,6 +8,21 @@ import ModelVoting from "@/app/components/model-voting";
 import PredictionConfidenceDistribution from "@/app/components/prediction-confidence-distribution";
 import PredictionResults from "@/app/components/prediction-results";
 
+const toIsoDate = (date) => date.toISOString().split("T")[0];
+
+const getPredictionDateBounds = () => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const max = new Date(today);
+  max.setDate(max.getDate() + 30);
+
+  return {
+    minPredictionDate: toIsoDate(today),
+    maxPredictionDate: toIsoDate(max),
+  };
+};
+
 export default function Home() {
   // Input states (lifted from FuelPriceSimulation)
   const [country, setCountry] = useState("Philippines");
@@ -19,7 +34,12 @@ export default function Home() {
   // Required: Brent Crude slider state in page.js
   const [brentCrudePrice, setBrentCrudePrice] = useState(85);
 
-  const [predictionDate, setPredictionDate] = useState("2025-10-20");
+  const { minPredictionDate, maxPredictionDate } = useMemo(
+    () => getPredictionDateBounds(),
+    [],
+  );
+
+  const [predictionDate, setPredictionDate] = useState(minPredictionDate);
 
   // Output state
   const [predictionData, setPredictionData] = useState(null);
@@ -47,6 +67,9 @@ export default function Home() {
         parsedTaxPercentage >= 0 &&
         parsedTaxPercentage <= 40));
 
+  const predictionDateIsValid =
+    predictionDate >= minPredictionDate && predictionDate <= maxPredictionDate;
+
   const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL;
   const normalizedApiBaseUrl = apiBaseUrl?.replace(/\/$/, "");
 
@@ -60,7 +83,13 @@ export default function Home() {
 
   // Required: gather all states and POST to `${NEXT_PUBLIC_API_URL}/predict`
   const handleRunPrediction = async () => {
-    if (!normalizedApiBaseUrl || loading || !priceInputsAreValid) return;
+    if (
+      !normalizedApiBaseUrl ||
+      loading ||
+      !priceInputsAreValid ||
+      !predictionDateIsValid
+    )
+      return;
 
     setLoading(true);
     try {
@@ -145,9 +174,15 @@ export default function Home() {
               setBrentCrudePrice={setBrentCrudePrice}
               predictionDate={predictionDate}
               setPredictionDate={setPredictionDate}
+              minPredictionDate={minPredictionDate}
+              maxPredictionDate={maxPredictionDate}
               onRunPrediction={handleRunPrediction}
               loading={loading}
-              disabled={!normalizedApiBaseUrl || !priceInputsAreValid}
+              disabled={
+                !normalizedApiBaseUrl ||
+                !priceInputsAreValid ||
+                !predictionDateIsValid
+              }
             />
           </div>
           <div className="h-full">
