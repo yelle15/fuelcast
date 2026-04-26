@@ -62,7 +62,7 @@ FUEL_ID_LOOKUP = {
 }
 
 
-def _load_assets() -> tuple[Any, dict[str, Any], dict[str, Any]]:
+def _load_assets() -> tuple[Any, dict[str, Any], dict[str, Any], dict[str, Any]]:
     bundle_path = os.path.join(os.path.dirname(__file__), "models", "fuel_dashboard_assets.joblib")
 
     if not os.path.exists(bundle_path):
@@ -76,7 +76,12 @@ def _load_assets() -> tuple[Any, dict[str, Any], dict[str, Any]]:
     except Exception as exc:
         raise RuntimeError(f"Unable to load model bundle at {bundle_path}: {exc}") from exc
 
-    return assets["final_model"], assets["all_models"], assets.get("metrics", {})
+    return (
+        assets["final_model"],
+        assets["all_models"],
+        assets.get("metrics", {}),
+        assets.get("preprocessing", {}),
+    )
 
 
 def _to_prediction_type(change: float) -> str:
@@ -99,20 +104,93 @@ def _safe_confidence_from_r2(r2_score: float) -> float:
     return max(0.0, min(100.0, r2_score * 100.0))
 
 
+def _confidence_for_model(model_name: str, fallback_confidence: float) -> float:
+    model_performance = metrics.get("model_performance", {}) if isinstance(metrics, dict) else {}
+    model_stats = model_performance.get(model_name)
+
+    if isinstance(model_stats, dict):
+        raw_r2 = model_stats.get("r2", model_stats.get("R2 Score"))
+        if raw_r2 is not None:
+            try:
+                return _safe_confidence_from_r2(float(raw_r2))
+            except (TypeError, ValueError):
+                pass
+
+    return fallback_confidence
+
+
 def _predict_model_price(model: Any, feature_df: pd.DataFrame) -> float:
     value = model.predict(feature_df)[0]
     return float(value)
 
 
 try:
-    final_model, model_dict, metrics = _load_assets()
+    final_model, model_dict, metrics, preprocessing = _load_assets()
 except RuntimeError as err:
     final_model = None
     model_dict = {}
     metrics = {}
+    preprocessing = {}
     MODEL_LOAD_ERROR = str(err)
 else:
     MODEL_LOAD_ERROR = None
+
+
+def _build_feature_df(
+    data: PricePredictionInput,
+    parsed_date: datetime,
+    mapped: dict[str, int],
+    fuel_key: str,
+) -> pd.DataFrame:
+    # Preferred path: notebook-aligned preprocessing exported with the model bundle.
+    if preprocessing and preprocessing.get("poly") is not None and preprocessing.get("scaler") is not None:
+        base_feature_row = {
+            "country_id": mapped["country_id"],
+            "income_id": mapped["income_id"],
+            "subsidy_id": mapped["subsidy_id"],
+            "year": parsed_date.year,
+            "month": parsed_date.month,
+            "petrol_lag_1": data.current_price,
+            "brent_lag_1": data.brent_crude,
+            "tax_percentage": data.tax_percentage,
+        }
+
+        base_features = preprocessing.get("base_features", [])
+        X_raw = pd.DataFrame([{col: base_feature_row[col] for col in base_features}])
+
+        numeric_to_poly = preprocessing.get("numeric_to_poly", [])
+        poly = preprocessing["poly"]
+        X_poly_raw = poly.transform(X_raw[numeric_to_poly])
+        poly_cols = poly.get_feature_names_out(numeric_to_poly)
+
+        categorical_cols = preprocessing.get("categorical_cols", [])
+        X_categorical = X_raw[categorical_cols].reset_index(drop=True)
+        X_poly_df = pd.DataFrame(X_poly_raw, columns=poly_cols).reset_index(drop=True)
+        X_combined = pd.concat([X_categorical, X_poly_df], axis=1)
+
+        final_cols = preprocessing.get("final_feature_cols", list(X_combined.columns))
+        X_combined = X_combined.reindex(columns=final_cols)
+
+        scaler = preprocessing["scaler"]
+        X_scaled = scaler.transform(X_combined)
+        return pd.DataFrame(X_scaled, columns=final_cols)
+
+    # Fallback path for legacy bundles.
+    feature_row = {
+        "country_id": mapped["country_id"],
+        "income_id": mapped["income_id"],
+        "subsidy_id": mapped["subsidy_id"],
+        "fuel_type_id": FUEL_ID_LOOKUP[fuel_key],
+        "year": parsed_date.year,
+        "month": parsed_date.month,
+        "petrol_lag_1": data.current_price,
+        "brent_lag_1": data.brent_crude,
+        "tax_percentage": data.tax_percentage,
+        "petrol_lag_1^2": data.current_price ** 2,
+        "petrol_lag_1 brent_lag_1": data.current_price * data.brent_crude,
+        "petrol_lag_1 tax_percentage": data.current_price * data.tax_percentage,
+    }
+    return pd.DataFrame([feature_row])
 
 
 @app.post("/predict")
@@ -149,22 +227,7 @@ async def predict(data: PricePredictionInput):
 
     mapped = COUNTRY_LOOKUP[country_key]
 
-    # Build the same engineered feature columns used in training.
-    feature_row = {
-        "country_id": mapped["country_id"],
-        "income_id": mapped["income_id"],
-        "subsidy_id": mapped["subsidy_id"],
-        "fuel_type_id": FUEL_ID_LOOKUP[fuel_key],
-        "year": parsed_date.year,
-        "month": parsed_date.month,
-        "petrol_lag_1": data.current_price,
-        "brent_lag_1": data.brent_crude,
-        "tax_percentage": data.tax_percentage,
-        "petrol_lag_1^2": data.current_price ** 2,
-        "petrol_lag_1 brent_lag_1": data.current_price * data.brent_crude,
-        "petrol_lag_1 tax_percentage": data.current_price * data.tax_percentage,
-    }
-    feature_df = pd.DataFrame([feature_row])
+    feature_df = _build_feature_df(data, parsed_date, mapped, fuel_key)
 
     try:
         final_prediction = _predict_model_price(final_model, feature_df)
@@ -178,8 +241,12 @@ async def predict(data: PricePredictionInput):
     prediction_type = _to_prediction_type(prediction_change)
     prediction_status = _to_prediction_status(prediction_type)
 
+    r2_score = float(metrics.get("r2", 0.0))
+    fallback_model_confidence = _safe_confidence_from_r2(r2_score)
+
     # Generate individual model votes for the model-voting widget.
-    individual_votes = []
+    # Prefer per-model training metrics; when unavailable, blend with live prediction proximity.
+    raw_votes = []
     vote_tallies = {"HIKE": 0, "ROLLBACK": 0, "STABLE": 0}
     for idx, (model_name, model_obj) in enumerate(model_dict.items(), start=1):
         try:
@@ -190,17 +257,48 @@ async def predict(data: PricePredictionInput):
         model_change = model_price - data.current_price
         model_vote = _to_prediction_type(model_change)
         vote_tallies[model_vote] += 1
-        confidence_pct = min(100.0, max(0.0, abs(model_change) * 100.0))
+        base_confidence = _confidence_for_model(model_name, fallback_model_confidence)
 
-        individual_votes.append(
+        raw_votes.append(
             {
                 "id": idx,
                 "model": model_name,
                 "prediction": model_vote,
-                "confidence": round(confidence_pct, 1),
+                "base_confidence": float(base_confidence),
                 "predicted_price": round(model_price, 3),
             }
         )
+
+    individual_votes = []
+    if raw_votes:
+        max_deviation = max(
+            abs(v["predicted_price"] - final_prediction) for v in raw_votes
+        )
+
+        for item in raw_votes:
+            if max_deviation > 0:
+                proximity_confidence = max(
+                    0.0,
+                    min(
+                        100.0,
+                        100.0
+                        * (1.0 - abs(item["predicted_price"] - final_prediction) / max_deviation),
+                    ),
+                )
+            else:
+                proximity_confidence = 100.0
+
+            # Weighted blend keeps ML metric grounding while reflecting model-specific behavior.
+            combined_confidence = (0.7 * item["base_confidence"]) + (0.3 * proximity_confidence)
+            individual_votes.append(
+                {
+                    "id": item["id"],
+                    "model": item["model"],
+                    "prediction": item["prediction"],
+                    "confidence": round(combined_confidence, 1),
+                    "predicted_price": item["predicted_price"],
+                }
+            )
 
     majority_vote_type = max(vote_tallies, key=vote_tallies.get) if individual_votes else prediction_type
     majority_vote_conf = 0.0
@@ -208,7 +306,6 @@ async def predict(data: PricePredictionInput):
         top_vote_count = vote_tallies[majority_vote_type]
         majority_vote_conf = (top_vote_count / len(individual_votes)) * 100.0
 
-    r2_score = float(metrics.get("r2", 0.0))
     confidence_level = _safe_confidence_from_r2(r2_score)
 
     return {

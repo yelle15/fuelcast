@@ -3,11 +3,13 @@ from __future__ import annotations
 from pathlib import Path
 
 import joblib
+import numpy as np
 import pandas as pd
-from sklearn.ensemble import RandomForestRegressor, VotingRegressor
+from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import LinearRegression
-from sklearn.metrics import mean_absolute_error, r2_score
-from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+from sklearn.preprocessing import PolynomialFeatures, StandardScaler
+from sklearn.svm import SVR
 from xgboost import XGBRegressor
 
 COUNTRY_LOOKUP = {
@@ -20,52 +22,31 @@ COUNTRY_LOOKUP = {
     "vietnam": {"country_id": 6, "income_id": 1, "subsidy_id": 2},
 }
 
-FUEL_ID_LOOKUP = {"lpg": 0, "diesel": 1, "petrol": 2}
-
-
 def build_training_frame(dataset_path: Path) -> pd.DataFrame:
     df = pd.read_csv(dataset_path)
     df["date"] = pd.to_datetime(df["date"])
     df["country_key"] = df["country"].str.lower().str.strip()
 
-    long_df = df.melt(
-        id_vars=["date", "country", "country_key", "brent_crude_usd", "tax_percentage"],
-        value_vars=["petrol_usd_liter", "diesel_usd_liter", "lpg_usd_liter"],
-        var_name="fuel_col",
-        value_name="price",
-    )
+    # Match the notebook setup: model target is petrol only and lagged by country.
+    df = df.sort_values(["country_key", "date"]).copy()
+    df["petrol_lag_1"] = df.groupby("country_key")["petrol_usd_liter"].shift(1)
+    df["brent_lag_1"] = df.groupby("country_key")["brent_crude_usd"].shift(1)
+    df = df.dropna(subset=["petrol_lag_1", "brent_lag_1", "tax_percentage", "petrol_usd_liter"]).copy()
 
-    fuel_map = {
-        "petrol_usd_liter": "petrol",
-        "diesel_usd_liter": "diesel",
-        "lpg_usd_liter": "lpg",
-    }
-    long_df["fuel_type"] = long_df["fuel_col"].map(fuel_map)
-
-    long_df = long_df.sort_values(["country_key", "fuel_type", "date"]).copy()
-    long_df["petrol_lag_1"] = long_df.groupby(["country_key", "fuel_type"])["price"].shift(1)
-    long_df["brent_lag_1"] = long_df.groupby(["country_key", "fuel_type"])["brent_crude_usd"].shift(1)
-
-    long_df = long_df.dropna(subset=["petrol_lag_1", "brent_lag_1", "tax_percentage", "price"]).copy()
-
-    long_df["country_id"] = long_df["country_key"].map(
+    df["country_id"] = df["country_key"].map(
         lambda c: COUNTRY_LOOKUP[c]["country_id"]
     )
-    long_df["income_id"] = long_df["country_key"].map(
+    df["income_id"] = df["country_key"].map(
         lambda c: COUNTRY_LOOKUP[c]["income_id"]
     )
-    long_df["subsidy_id"] = long_df["country_key"].map(
+    df["subsidy_id"] = df["country_key"].map(
         lambda c: COUNTRY_LOOKUP[c]["subsidy_id"]
     )
-    long_df["fuel_type_id"] = long_df["fuel_type"].map(FUEL_ID_LOOKUP)
 
-    long_df["year"] = long_df["date"].dt.year
-    long_df["month"] = long_df["date"].dt.month
-    long_df["petrol_lag_1^2"] = long_df["petrol_lag_1"] ** 2
-    long_df["petrol_lag_1 brent_lag_1"] = long_df["petrol_lag_1"] * long_df["brent_lag_1"]
-    long_df["petrol_lag_1 tax_percentage"] = long_df["petrol_lag_1"] * long_df["tax_percentage"]
+    df["year"] = df["date"].dt.year
+    df["month"] = df["date"].dt.month
 
-    return long_df
+    return df
 
 
 def train_and_export() -> Path:
@@ -79,56 +60,78 @@ def train_and_export() -> Path:
         "country_id",
         "income_id",
         "subsidy_id",
-        "fuel_type_id",
         "year",
         "month",
         "petrol_lag_1",
         "brent_lag_1",
         "tax_percentage",
-        "petrol_lag_1^2",
-        "petrol_lag_1 brent_lag_1",
-        "petrol_lag_1 tax_percentage",
     ]
 
-    X = frame[feature_cols]
-    y = frame["price"]
+    X_raw = frame[feature_cols]
+    y = frame["petrol_usd_liter"]
 
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=42
-    )
+    numeric_to_poly = ["petrol_lag_1", "brent_lag_1", "tax_percentage"]
+    poly = PolynomialFeatures(degree=2, interaction_only=False, include_bias=False)
+    X_poly_raw = poly.fit_transform(X_raw[numeric_to_poly])
+    poly_cols = poly.get_feature_names_out(numeric_to_poly)
+
+    categorical_cols = ["country_id", "income_id", "subsidy_id", "year", "month"]
+    X_categorical = X_raw[categorical_cols].reset_index(drop=True)
+    X_poly_df = pd.DataFrame(X_poly_raw, columns=poly_cols).reset_index(drop=True)
+    X_combined = pd.concat([X_categorical, X_poly_df], axis=1)
+
+    scaler = StandardScaler()
+    X_scaled = scaler.fit_transform(X_combined)
+    X_final = pd.DataFrame(X_scaled, columns=X_combined.columns)
+
+    # Match notebook split logic: train before 2025-01-01, test from 2025 onward.
+    train_mask = frame["date"] < "2025-01-01"
+    test_mask = frame["date"] >= "2025-01-01"
+
+    X_train = X_final.loc[train_mask].reset_index(drop=True)
+    X_test = X_final.loc[test_mask].reset_index(drop=True)
+    y_train = y.loc[train_mask].reset_index(drop=True)
+    y_test = y.loc[test_mask].reset_index(drop=True)
+
+    if X_train.empty or X_test.empty:
+        raise RuntimeError("Time-based split produced empty train or test set.")
 
     all_models = {
         "Linear Regression": LinearRegression(),
-        "Random Forest": RandomForestRegressor(
-            n_estimators=250, random_state=42, n_jobs=-1
-        ),
+        "Random Forest": RandomForestRegressor(n_estimators=200, random_state=42),
         "XGBoost": XGBRegressor(
-            n_estimators=300,
+            n_estimators=200,
             learning_rate=0.05,
             max_depth=6,
             random_state=42,
             objective="reg:squarederror",
-            n_jobs=2,
         ),
+        "SVM": SVR(kernel="rbf", C=1.0, epsilon=0.01),
     }
 
+    performance: dict[str, dict[str, float]] = {}
     for model in all_models.values():
         model.fit(X_train, y_train)
+    for name, model in all_models.items():
+        preds = model.predict(X_test)
+        performance[name] = {
+            "rmse": float(np.sqrt(mean_squared_error(y_test, preds))),
+            "r2": float(r2_score(y_test, preds)),
+            "mae": float(mean_absolute_error(y_test, preds)),
+        }
 
-    final_model = VotingRegressor(
-        estimators=[
-            ("linreg", all_models["Linear Regression"]),
-            ("rf", all_models["Random Forest"]),
-            ("xgb", all_models["XGBoost"]),
-        ]
-    )
-    final_model.fit(X_train, y_train)
+    best_model_name = min(performance.items(), key=lambda item: item[1]["rmse"])[0]
+    final_model = all_models[best_model_name]
+    final_preds = final_model.predict(X_test)
 
-    preds = final_model.predict(X_test)
     metrics = {
-        "r2": float(r2_score(y_test, preds)),
-        "mae": float(mean_absolute_error(y_test, preds)),
+        "best_model": best_model_name,
+        "rmse": float(np.sqrt(mean_squared_error(y_test, final_preds))),
+        "r2": float(r2_score(y_test, final_preds)),
+        "mae": float(mean_absolute_error(y_test, final_preds)),
         "rows": int(len(frame)),
+        "split": "date<2025-01-01 train / >=2025-01-01 test",
+        "model_performance": performance,
     }
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -137,7 +140,15 @@ def train_and_export() -> Path:
             "final_model": final_model,
             "all_models": all_models,
             "metrics": metrics,
-            "features": feature_cols,
+            "features": list(X_combined.columns),
+            "preprocessing": {
+                "base_features": feature_cols,
+                "categorical_cols": categorical_cols,
+                "numeric_to_poly": numeric_to_poly,
+                "poly": poly,
+                "scaler": scaler,
+                "final_feature_cols": list(X_combined.columns),
+            },
         },
         output_path,
     )

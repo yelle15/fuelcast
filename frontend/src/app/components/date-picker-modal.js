@@ -77,13 +77,14 @@ export default function DatePickerModal({
   minDate,
   maxDate,
 }) {
-  const [horizon, setHorizon] = useState(7);
+  const [horizon, setHorizon] = useState('');
   const [displayMonth, setDisplayMonth] = useState(new Date().getMonth());
   const [displayYear, setDisplayYear] = useState(new Date().getFullYear());
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
   const handleHorizonChange = (days) => {
+    if (!Number.isFinite(days)) return;
     setHorizon(days);
     const newDate = new Date(today);
     newDate.setDate(newDate.getDate() + days);
@@ -146,9 +147,19 @@ export default function DatePickerModal({
           </label>
           <select
             value={horizon}
-            onChange={(e) => handleHorizonChange(parseInt(e.target.value))}
+            onChange={(e) => {
+              const value = e.target.value;
+              if (!value) {
+                setHorizon('');
+                return;
+              }
+              handleHorizonChange(parseInt(value, 10));
+            }}
             className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
+            <option value="" disabled>
+              Select Prediction Horizon
+            </option>
             <option value={7}>Next 7 days</option>
             <option value={14}>Next 14 days</option>
             <option value={30}>Next 30 days</option>

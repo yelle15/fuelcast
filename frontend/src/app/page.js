@@ -21,6 +21,29 @@ const getPredictionDateBounds = () => {
   };
 };
 
+const resolveApiBaseUrl = (rawUrl) => {
+  if (!rawUrl) return "";
+
+  try {
+    const resolved = new URL(rawUrl);
+
+    // In browser sessions opened via LAN/IP host, `localhost` points to the client machine.
+    if (
+      typeof window !== "undefined" &&
+      ["localhost", "127.0.0.1", "::1"].includes(resolved.hostname)
+    ) {
+      const browserHost = window.location.hostname;
+      if (browserHost && !["localhost", "127.0.0.1", "::1"].includes(browserHost)) {
+        resolved.hostname = browserHost;
+      }
+    }
+
+    return resolved.toString().replace(/\/$/, "");
+  } catch {
+    return rawUrl.replace(/\/$/, "");
+  }
+};
+
 export default function Home() {
   // Input states (lifted from FuelPriceSimulation)
   const [country, setCountry] = useState("Philippines");
@@ -68,7 +91,10 @@ export default function Home() {
     predictionDate >= minPredictionDate && predictionDate <= maxPredictionDate;
 
   const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL;
-  const normalizedApiBaseUrl = apiBaseUrl?.replace(/\/$/, "");
+  const normalizedApiBaseUrl = useMemo(
+    () => resolveApiBaseUrl(apiBaseUrl),
+    [apiBaseUrl],
+  );
 
   useEffect(() => {
     if (!normalizedApiBaseUrl) {

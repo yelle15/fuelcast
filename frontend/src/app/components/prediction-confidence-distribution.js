@@ -37,9 +37,14 @@ const CustomTooltip = ({ active, payload }) => {
 };
 
 export default function PredictionConfidenceDistribution({
+  distribution_data,
   data = mockConfidenceData,
   rangeDisplay = "0.28 - 0.35 / Liter",
 }) {
+  const chartData = Array.isArray(distribution_data)
+    ? distribution_data
+    : data;
+
   return (
     <div className="w-full max-w-[360px] h-[275px] p-4 bg-white rounded-lg shadow-[0px_0px_6px_0px_rgba(0,0,0,0.20)] font-inter">
       {/* Header */}
@@ -68,7 +73,7 @@ export default function PredictionConfidenceDistribution({
       {/* <div className="w-full h-[200px]"> */}
       <ResponsiveContainer width="100%" height="88%">
         <BarChart
-          data={data}
+          data={chartData}
           margin={{ top: 10, right: 15, left: 0, bottom: 20 }}
         >
           {/* Grid (clean solid lines) */}
