@@ -48,7 +48,7 @@ const mockPredictionData = {
 
 /** SAFE NORMALIZER */
 const normalizePredictionData = (data) => {
-  if (!data) return mockPredictionData;
+  if (!data) return null;
 
   return {
     date: data.date ?? "",
@@ -95,11 +95,13 @@ const predictionStatusConfig = {
 export default function PredictionResults(props) {
   const { data } = props;
 
-  const predictionData = normalizePredictionData(data ?? mockPredictionData);
+  const predictionData = normalizePredictionData(data);
+  const hasData = predictionData !== null;
 
-  const currentConfig =
-    predictionStatusConfig[predictionData.prediction.type] ||
-    predictionStatusConfig.STABLE;
+  const currentConfig = hasData
+    ? (predictionStatusConfig[predictionData.prediction.type] ||
+       predictionStatusConfig.STABLE)
+    : predictionStatusConfig.STABLE;
 
   return (
     <div className="w-[750px] h-123 p-4 bg-white rounded-lg shadow-[0px_0px_6px_0px_rgba(0,0,0,0.20)] flex flex-col justify-start items-start gap-2.5">
@@ -120,51 +122,71 @@ export default function PredictionResults(props) {
             </h1>
             <p
               className="text-[10px] font-inter text-gray-600 mt-0.5">
-              Fill in the inputs to generate a prediction.
+              {hasData ? "Fill in the inputs to generate a prediction." : "Fill in the required inputs and run the prediction to see results, insights,\nand model analysis"}
             </p>
           </div>
         </div>
 
-        <div className="px-3 py-1 bg-sky-950 rounded-[3px] flex-shrink-0">
+        {hasData && <div className="px-3 py-1 bg-sky-950 rounded-[3px] flex-shrink-0">
           <div
             className={`text-white text-xs font-semibold ${inter.className}`}
           >
             DATE: {predictionData.date}
           </div>
-        </div>
+        </div>}
       </div>
 
       {/* BANNER */}
       <div
-        className="self-stretch flex-1 py-6 px-6 mb-2 rounded-[5px] flex items-center gap-6"
-        style={{ backgroundColor: currentConfig.bannerBgColor }}
+        className={`self-stretch flex-1 py-6 px-6 mb-2 rounded-[5px] flex items-center gap-6 ${!hasData ? 'bg-slate-100' : ''}`}
+        style={hasData ? { backgroundColor: currentConfig.bannerBgColor } : {}}
       >
-        <div
-          className="w-20 h-20 rounded-[10px] flex justify-center items-center"
-          style={{ backgroundColor: currentConfig.iconBoxBgColor }}
-        >
-          <img
-            src={currentConfig.icon}
-            alt={predictionData.prediction.type}
-            className="w-full h-full object-contain p-2"
-          />
-        </div>
+        {hasData ? (
+          <>
+            <div
+              className="w-20 h-20 rounded-[10px] flex justify-center items-center"
+              style={{ backgroundColor: currentConfig.iconBoxBgColor }}
+            >
+              <img
+                src={currentConfig.icon}
+                alt={predictionData.prediction.type}
+                className="w-full h-full object-contain p-2"
+              />
+            </div>
 
-        <div className="flex flex-col gap-1 flex-1">
-          <div
-            className={`text-lg font-semibold ${inter.className}`}
-            style={{ color: currentConfig.textColor }}
-          >
-            {predictionData.prediction.status}
-          </div>
+            <div className="flex flex-col gap-1 flex-1">
+              <div
+                className={`text-lg font-semibold ${inter.className}`}
+                style={{ color: currentConfig.textColor }}
+              >
+                {predictionData.prediction.status}
+              </div>
 
-          <div className={`text-[10px] ${inter.className}`}>
-            <span className="text-black font-bold">Disclaimer: </span>
-            <span className="text-black font-normal">
-              {predictionData.prediction.disclaimer}
-            </span>
-          </div>
-        </div>
+              <div className={`text-[10px] ${inter.className}`}>
+                <span className="text-black font-bold">Disclaimer: </span>
+                <span className="text-black font-normal">
+                  {predictionData.prediction.disclaimer}
+                </span>
+              </div>
+            </div>
+          </>
+        ) : (
+          <>
+            <img
+              src="/fuel-icon.png"
+              alt="Empty state"
+              className="w-12 h-12 object-contain flex-shrink-0"
+            />
+            <div className="flex flex-col gap-1">
+              <div className={`text-lg font-semibold text-gray-900 ${inter.className}`}>
+                Your prediction will appear here
+              </div>
+              <div className={`text-[10px] text-gray-600 ${inter.className}`}>
+                Fill in the required inputs and run the prediction to see results, insights,<br />and model analysis
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
       {/* REGRESSION */}
@@ -183,7 +205,7 @@ export default function PredictionResults(props) {
             <div
               className={`text-teal-600 text-sm font-medium ${jetbrainsMono.className}`}
             >
-              {predictionData.regression.predictionChange}
+              {hasData ? predictionData.regression.predictionChange : "—"}
             </div>
           </div>
 
@@ -196,7 +218,7 @@ export default function PredictionResults(props) {
             <div
               className={`text-black text-sm font-medium ${jetbrainsMono.className}`}
             >
-              {predictionData.regression.r2Score}
+              {hasData ? predictionData.regression.r2Score : "—"}
             </div>
           </div>
 
@@ -209,7 +231,7 @@ export default function PredictionResults(props) {
             <div
               className={`text-teal-600 text-sm font-medium ${jetbrainsMono.className}`}
             >
-              {predictionData.regression.confidenceLevel}
+              {hasData ? predictionData.regression.confidenceLevel : "—"}
             </div>
           </div>
         </div>
