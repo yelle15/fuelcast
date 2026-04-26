@@ -124,6 +124,19 @@ def _predict_model_price(model: Any, feature_df: pd.DataFrame) -> float:
     return float(value)
 
 
+def _build_confidence_distribution(confidences: list[float]) -> list[dict[str, Any]]:
+    # Histogram-style bins to mirror notebook-style confidence distribution visuals.
+    bins = [(69, 79), (80, 84), (85, 89), (90, 94), (95, 100)]
+    distribution = []
+
+    for start, end in bins:
+        label = f"{start}-{end}%"
+        frequency = sum(1 for c in confidences if start <= c <= end)
+        distribution.append({"confidence": label, "frequency": frequency})
+
+    return distribution
+
+
 try:
     final_model, model_dict, metrics, preprocessing = _load_assets()
 except RuntimeError as err:
@@ -307,6 +320,13 @@ async def predict(data: PricePredictionInput):
         majority_vote_conf = (top_vote_count / len(individual_votes)) * 100.0
 
     confidence_level = _safe_confidence_from_r2(r2_score)
+    confidence_values = [v["confidence"] for v in individual_votes]
+    if not confidence_values:
+        confidence_values = [confidence_level]
+
+    confidence_distribution = _build_confidence_distribution(confidence_values)
+    confidence_min = min(confidence_values)
+    confidence_max = max(confidence_values)
 
     return {
         "date": parsed_date.strftime("%B %d").upper(),
@@ -340,20 +360,12 @@ async def predict(data: PricePredictionInput):
             "prediction": majority_vote_type,
             "confidence": round(majority_vote_conf, 1),
         },
+        "confidenceRangeDisplay": f"{confidence_min:.1f}% - {confidence_max:.1f}%",
         # Recharts-friendly arrays for chart components.
         "chartData": [
             {"name": "Last Week", "price": round(data.last_week_price, 3)},
             {"name": "Current", "price": round(data.current_price, 3)},
             {"name": "Predicted", "price": round(final_prediction, 3)},
         ],
-        "confidenceDistribution": [
-            {"confidence": "80%", "frequency": 0},
-            {"confidence": "85%", "frequency": 0},
-            {"confidence": "90%", "frequency": 0},
-            {"confidence": "95%", "frequency": 0},
-            {
-                "confidence": f"{int(round(confidence_level))}%",
-                "frequency": len(individual_votes) if individual_votes else 1,
-            },
-        ],
+        "confidenceDistribution": confidence_distribution,
     }
