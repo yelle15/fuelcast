@@ -122,7 +122,7 @@ export default function PredictionResults(props) {
             </h1>
             <p
               className="text-[10px] font-inter text-gray-600 mt-0.5">
-              {hasData ? "Fill in the inputs to generate a prediction." : "Fill in the required inputs and run the prediction to see results, insights,\nand model analysis"}
+              {hasData ? "Fill in the inputs to generate a prediction." : "Fill in the required inputs and run the prediction to see results, insights,\nand model analysis."}
             </p>
           </div>
         </div>
