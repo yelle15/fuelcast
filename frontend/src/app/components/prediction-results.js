@@ -81,7 +81,7 @@ const predictionStatusConfig = {
     bannerBgColor: "#FEE8C1",
     iconBoxBgColor: "#FF7A00",
     textColor: "#FF7A00",
-    displayText: "PRICE STABLE",
+    displayText: "STABLE PRICE",
   },
   ROLLBACK: {
     icon: "/rollback.png",

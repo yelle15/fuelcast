@@ -104,7 +104,7 @@ def _to_prediction_status(pred_type: str) -> str:
         return "POSSIBLE PRICE HIKE"
     if pred_type == "ROLLBACK":
         return "POSSIBLE PRICE ROLLBACK"
-    return "PRICE STABLE"
+    return "STABLE PRICE"
 
 
 def _safe_confidence_from_r2(r2_score: float) -> float:
