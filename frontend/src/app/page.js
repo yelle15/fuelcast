@@ -127,6 +127,7 @@ export default function Home() {
             : Number(taxPercentage),
         brent_crude: brentCrudePrice,
         prediction_date: predictionDate,
+        current_date: toIsoDate(new Date()),
       };
 
       const response = await fetch(`${normalizedApiBaseUrl}/predict`, {

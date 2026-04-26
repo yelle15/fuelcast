@@ -42,6 +42,7 @@ class PricePredictionInput(BaseModel):
     tax_percentage: float
     brent_crude: float
     prediction_date: str
+    current_date: str | None = None
 
 
 # Country mapping used by the model features.
@@ -59,6 +60,12 @@ FUEL_ID_LOOKUP = {
     "lpg": 0,
     "diesel": 1,
     "petrol": 2,
+}
+
+FUEL_COLUMN_LOOKUP = {
+    "lpg": "lpg_usd_liter",
+    "diesel": "diesel_usd_liter",
+    "petrol": "petrol_usd_liter",
 }
 
 
@@ -135,6 +142,45 @@ def _build_confidence_distribution(confidences: list[float]) -> list[dict[str, A
         distribution.append({"confidence": label, "frequency": frequency})
 
     return distribution
+
+
+def _build_trend_series(
+    start_date: datetime,
+    end_date: datetime,
+    current_price: float,
+    predicted_price: float,
+    input_brent: float,
+    last_week_price: float,
+) -> list[dict[str, Any]]:
+    total_days = (end_date.date() - start_date.date()).days
+    if total_days < 0:
+        return []
+
+    trend_data: list[dict[str, Any]] = []
+    # Keep Brent trend tied to predicted local direction while avoiding exaggerated swings.
+    price_change_ratio = (predicted_price - current_price) / max(current_price, 0.01)
+    brent_multiplier = max(0.85, min(1.15, 1.0 + (0.25 * price_change_ratio)))
+    brent_end = input_brent * brent_multiplier
+
+    for day_idx in range(total_days + 1):
+        progress = (day_idx / total_days) if total_days > 0 else 1.0
+        point_date = start_date + timedelta(days=day_idx)
+        local_price = current_price + ((predicted_price - current_price) * progress)
+        brent_price = input_brent + ((brent_end - input_brent) * progress)
+
+        # Use last-week signal to avoid a perfectly flat line on short horizons.
+        if total_days > 0:
+            weekly_momentum = current_price - last_week_price
+            local_price += (weekly_momentum * 0.05 * (1.0 - progress))
+
+        trend_data.append(
+            {
+                "date": point_date.strftime("%Y-%m-%d"),
+                "brentCrude": round(float(brent_price), 3),
+                "localFuelPrice": round(float(local_price), 3),
+            }
+        )
+    return trend_data
 
 
 try:
@@ -227,15 +273,29 @@ async def predict(data: PricePredictionInput):
             detail="prediction_date must be a valid ISO date string (YYYY-MM-DD)",
         ) from exc
 
-    # Enforce prediction date is within valid range: today to +30 days
-    today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
-    max_prediction_date = today + timedelta(days=30)
+    # Enforce prediction date is within valid range: user's current date to +30 days.
+    user_current_date = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    if data.current_date:
+        try:
+            user_current_date = datetime.fromisoformat(data.current_date).replace(
+                hour=0,
+                minute=0,
+                second=0,
+                microsecond=0,
+            )
+        except ValueError as exc:
+            raise HTTPException(
+                status_code=400,
+                detail="current_date must be a valid ISO date string (YYYY-MM-DD)",
+            ) from exc
+
+    max_prediction_date = user_current_date + timedelta(days=30)
     parsed_date_normalized = parsed_date.replace(hour=0, minute=0, second=0, microsecond=0)
     
-    if parsed_date_normalized < today or parsed_date_normalized > max_prediction_date:
+    if parsed_date_normalized < user_current_date or parsed_date_normalized > max_prediction_date:
         raise HTTPException(
             status_code=400,
-            detail=f"prediction_date must be between {today.strftime('%Y-%m-%d')} and {max_prediction_date.strftime('%Y-%m-%d')}",
+            detail=f"prediction_date must be between {user_current_date.strftime('%Y-%m-%d')} and {max_prediction_date.strftime('%Y-%m-%d')}",
         )
 
     mapped = COUNTRY_LOOKUP[country_key]
@@ -327,6 +387,14 @@ async def predict(data: PricePredictionInput):
     confidence_distribution = _build_confidence_distribution(confidence_values)
     confidence_min = min(confidence_values)
     confidence_max = max(confidence_values)
+    trend_data = _build_trend_series(
+        start_date=user_current_date,
+        end_date=parsed_date_normalized,
+        current_price=data.current_price,
+        predicted_price=final_prediction,
+        input_brent=data.brent_crude,
+        last_week_price=data.last_week_price,
+    )
 
     return {
         "date": parsed_date.strftime("%B %d").upper(),
@@ -338,6 +406,7 @@ async def predict(data: PricePredictionInput):
             "tax_percentage": data.tax_percentage,
             "brent_crude": data.brent_crude,
             "prediction_date": data.prediction_date,
+            "current_date": user_current_date.strftime("%Y-%m-%d"),
         },
         "prediction": {
             "status": prediction_status,
@@ -360,6 +429,7 @@ async def predict(data: PricePredictionInput):
             "prediction": majority_vote_type,
             "confidence": round(majority_vote_conf, 1),
         },
+        "trend": trend_data,
         "confidenceRangeDisplay": f"{confidence_min:.1f}% - {confidence_max:.1f}%",
         # Recharts-friendly arrays for chart components.
         "chartData": [
