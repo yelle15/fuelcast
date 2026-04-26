@@ -8,7 +8,7 @@ services:
       - /app/node_modules # This protects the container's modules
       - /app/.next
     environment:
-      - NODE_ENV=development
+      - WATCHPACK_POLLING=true # Vital for Next.js on Windows
 
   fuelcast-backend:
     build: ./backend
