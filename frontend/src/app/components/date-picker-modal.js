@@ -159,7 +159,7 @@ export default function DatePickerModal({
             }}
             className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
-            <option value="" disabled>
+            <option value="" disabled hidden>
               Select Prediction Horizon
             </option>
             <option value={7}>Next 7 days</option>
