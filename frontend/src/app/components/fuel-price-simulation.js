@@ -196,9 +196,13 @@ export default function FuelPriceSimulation({
         <button
           type="button"
           onClick={() => setIsModalOpen(true)}
-          className="w-full px-3 py-1.5 border border-gray-300 rounded-md text-gray-900 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-left bg-white hover:bg-gray-50 transition-colors"
+          className="w-full px-3 py-1.5 border border-gray-300 rounded-md text-gray-900 bg-white text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent flex items-center justify-between"
         >
-          {predictionDate || 'Select a date...'}
+          <span>{predictionDate || 'Select Date'}</span>
+          <span
+            className="pointer-events-none inline-block h-1.5 w-1.5 border-r-2 border-b-2 border-gray-800 rotate-45 -translate-y-0.5"
+            aria-hidden="true"
+          />
         </button>
       </div>
 
@@ -208,7 +212,10 @@ export default function FuelPriceSimulation({
         onClose={() => setIsModalOpen(false)}
         selectedDate={predictionDate}
         onSelectDate={(date) => {
-          const isoDate = date.toISOString().split('T')[0];
+          const year = date.getFullYear();
+          const month = String(date.getMonth() + 1).padStart(2, '0');
+          const day = String(date.getDate()).padStart(2, '0');
+          const isoDate = `${year}-${month}-${day}`;
           setPredictionDate(isoDate);
           setIsModalOpen(false);
         }}

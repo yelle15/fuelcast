@@ -11,12 +11,15 @@ import PredictionResults from "@/app/components/prediction-results";
 const toIsoDate = (date) => date.toISOString().split("T")[0];
 
 const getPredictionDateBounds = () => {
-  const todayIso = new Date().toISOString().split("T")[0];
-  const max = new Date(`${todayIso}T00:00:00.000Z`);
-  max.setUTCDate(max.getUTCDate() + 30);
+  const start = new Date();
+  start.setHours(0, 0, 0, 0);
+  start.setDate(start.getDate() + 1);
+
+  const max = new Date(start);
+  max.setDate(max.getDate() + 29);
 
   return {
-    minPredictionDate: todayIso,
+    minPredictionDate: toIsoDate(start),
     maxPredictionDate: toIsoDate(max),
   };
 };
@@ -59,7 +62,7 @@ export default function Home() {
     () => getPredictionDateBounds(),
     [],
   );
-  const [predictionDate, setPredictionDate] = useState(minPredictionDate);
+  const [predictionDate, setPredictionDate] = useState("");
 
   // Output state
   const [predictionData, setPredictionData] = useState(null);

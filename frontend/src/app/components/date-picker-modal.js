@@ -42,7 +42,7 @@ function CalendarMonth({ year, month, today, selectedDate, onSelectDate, minDate
           }
 
           const isToday = date.toDateString() === today.toDateString();
-          const isSelected = date.toDateString() === selectedDate.toDateString();
+          const isSelected = selectedDate && date.toDateString() === selectedDate.toDateString();
           const inRange = isDateInRange(date);
 
           return (
@@ -123,8 +123,10 @@ export default function DatePickerModal({
 
   if (!isOpen) return null;
 
-  const modalSelectedDate = new Date(selectedDate);
-  modalSelectedDate.setHours(0, 0, 0, 0);
+  const modalSelectedDate = selectedDate ? new Date(selectedDate) : null;
+  if (modalSelectedDate) {
+    modalSelectedDate.setHours(0, 0, 0, 0);
+  }
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -170,7 +172,7 @@ export default function DatePickerModal({
         <div className="mb-4 p-3 bg-blue-50 rounded-md">
           <p className="text-xs text-gray-600 mb-1">Selected Date:</p>
           <p className="text-sm font-semibold text-gray-900">
-            {formatDisplayDate(modalSelectedDate)}
+            {modalSelectedDate ? formatDisplayDate(modalSelectedDate) : 'Select Date'}
           </p>
         </div>
 
