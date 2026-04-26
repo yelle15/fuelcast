@@ -182,7 +182,7 @@ export default function PredictionResults(props) {
                 Your prediction will appear here
               </div>
               <div className={`text-[10px] text-gray-600 ${inter.className}`}>
-                Fill in the required inputs and run the prediction to see results, insights,<br />and model analysis
+                Fill in the required inputs and run the prediction to see results, insights,<br />and model analysis.
               </div>
             </div>
           </>
