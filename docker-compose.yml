@@ -17,3 +17,5 @@ services:
     volumes:
       - ./backend:/app
       - ./machine-learning:/machine-learning:ro
+    environment:
+      - WATCHFILES_FORCE_POLLING=true 
