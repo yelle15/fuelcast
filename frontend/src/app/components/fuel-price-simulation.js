@@ -136,7 +136,7 @@ export default function FuelPriceSimulation({
           {/* Tax Percentage */}
           <div className="flex-1 min-w-0">
             <label className="block text-[10px] font-medium text-gray-700 mb-0.5 leading-tight whitespace-nowrap">
-              Tax Percentage (%) <span className="text-gray-500 text-[10px] font-normal italic ml-1">optional</span>
+              Tax Percentage (%) 
             </label>
             <input
               type="number"
@@ -157,7 +157,7 @@ export default function FuelPriceSimulation({
         <div className="flex justify-between items-center mb-2">
           <label className="text-sm font-semibold font-inter text-gray-900">
             Brent Crude Price (USD/bbl)
-            <span className="text-gray-500 text-xs font-normal italic ml-1">optional</span>
+            
           </label>
           <div className="flex items-center gap-2">
             <span className="text-sm font-semibold text-gray-900">$</span>
