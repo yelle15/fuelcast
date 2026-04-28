@@ -1,6 +1,6 @@
 export default function Footer() {
     return (
-        <footer className="w-full bg-sky-950 px-8 py-6">
+        <footer className="w-full bg-sky-950 px-8 py-6 mt-auto">
             <div className="mx-auto max-w-8xl grid gap-5 md:grid-cols-2">
                 <div className="space-y-2">
                     <p className="text-xs font-semibold text-teal-400">ABOUT FUELCAST SEA</p>
